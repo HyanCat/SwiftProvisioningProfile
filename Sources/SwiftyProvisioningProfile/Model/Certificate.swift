@@ -28,6 +28,9 @@ public struct Certificate: Encodable, Equatable {
     public let orgName: String?
     public let orgUnit: String
     
+    public let serialNumer: String
+    public let sha1: String
+    
     init(results: [CFString: Any], commonName: String?) throws {
         self.commonName = commonName
         
@@ -44,6 +47,11 @@ public struct Certificate: Encodable, Equatable {
         countryName = try Certificate.getValue(for: kSecOIDCountryName, fromDict: subjectName)
         orgName = try? Certificate.getValue(for: kSecOIDOrganizationName, fromDict: subjectName)
         orgUnit = try Certificate.getValue(for: kSecOIDOrganizationalUnitName, fromDict: subjectName)
+        serialNumer = try Certificate.getValue(for: kSecOIDX509V1SerialNumber, from: results)
+        
+        let fingerprints: [[CFString: Any]] = try Certificate.getValue(for: "Fingerprints" as CFString, from: results)
+        let sha1Data: Data = try Certificate.getValue(for: "SHA-1" as CFString, fromDict: fingerprints)
+        sha1 = sha1Data.hexString()
     }
 
     static func getValue<T>(for key: CFString, from values: [CFString: Any]) throws -> T {
@@ -86,4 +94,11 @@ public struct Certificate: Encodable, Equatable {
         return value
     }
     
+}
+
+extension Data {
+    /// 将 Data 转换为十六进制字符串
+    func hexString() -> String {
+        return map { String(format: "%02hhx", $0) }.joined().uppercased()
+    }
 }
